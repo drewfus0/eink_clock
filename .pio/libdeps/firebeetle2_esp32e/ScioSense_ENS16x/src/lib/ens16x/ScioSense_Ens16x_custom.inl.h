@@ -1,6 +1,0 @@
-#ifndef SCIOSENSE_ENS16X_CUSTOM_INL_H
-#define SCIOSENSE_ENS16X_CUSTOM_INL_H
-
-#include "ScioSense_Ens16x_custom.h"
-
-#endif // SCIOSENSE_ENS16X_CUSTOM_INL_H
