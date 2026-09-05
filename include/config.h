@@ -41,7 +41,7 @@
 // =============================================================================
 // Hardware Pin Definitions (FireBeetle 2 ESP32-E)
 // =============================================================================
-// GooDisplay DESPI-C02 to ESP32-E (Hardware VSPI)
+// Waveshare e-Paper Driver HAT (Rev 2.3) to ESP32-E (Hardware VSPI)
 #define EPD_BUSY_PIN        -1  // Software timed (-1): guarantees full 4.2s refresh without premature busy-pin cutoff
 #define EPD_RST_PIN         25  // Silkscreen: "25/D2"  - Display Hardware Reset
 #define EPD_DC_PIN          26  // Silkscreen: "26/D3"  - Data / Command Selection

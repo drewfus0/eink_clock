@@ -5,10 +5,13 @@ GxEPD2_DISPLAY_CLASS display(GxEPD2_DRIVER_CLASS(EPD_CS_PIN, EPD_DC_PIN, EPD_RST
 
 void displayInitHardware(bool initial) {
     #if defined(EPD_PWR_PIN) && (EPD_PWR_PIN >= 0)
-    // Power on the Waveshare HAT driver board
+    // Release hold latch if waking from deep sleep, and ensure power is HIGH
+    gpio_hold_dis((gpio_num_t)EPD_PWR_PIN);
     pinMode(EPD_PWR_PIN, OUTPUT);
     digitalWrite(EPD_PWR_PIN, HIGH);
-    delay(15); // Allow onboard power rail and charge pump to stabilize
+    if (initial) {
+        delay(15); // Allow onboard power rail and charge pump to stabilize on initial cold boot
+    }
     #endif
 
     // Explicitly configure hardware SPI pins for FireBeetle 2 ESP32-E
@@ -29,12 +32,20 @@ void displayInitHardware(bool initial) {
     #endif
 }
 
+#include <driver/gpio.h>
+
 void displayPowerOff() {
+    // Power off high-voltage driving circuits on the panel
     display.powerOff();
+
     #if defined(EPD_PWR_PIN) && (EPD_PWR_PIN >= 0)
-    // Turn off power to the HAT to eliminate standby drain in deep sleep
-    digitalWrite(EPD_PWR_PIN, LOW);
-    pinMode(EPD_PWR_PIN, INPUT);
+    // CRITICAL FOR PARTIAL REFRESH:
+    // Keep 3.3V power to the HAT controller logic across deep sleep so internal
+    // SRAM preserves the previous frame buffer. Differential refresh relies on this!
+    pinMode(EPD_PWR_PIN, OUTPUT);
+    digitalWrite(EPD_PWR_PIN, HIGH);
+    gpio_hold_en((gpio_num_t)EPD_PWR_PIN);
+    gpio_deep_sleep_hold_en();
     #endif
 }
 

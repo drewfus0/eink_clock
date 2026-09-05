@@ -52,7 +52,7 @@ void setup() {
 
     // Initialize I2C sensors and display hardware
     initSensors();
-    displayInitHardware(true);
+    displayInitHardware(fullRefresh);
 
     // Read telemetry
     SensorData sensorData = readSensors();

@@ -45,7 +45,7 @@ Electrophoretic ink displays work by physically migrating micro-capsules of char
 
 ### Retaining Controller SRAM Across Deep Sleep
 - **`display.hibernate()` (< 1 µA):** Shuts off the display controller completely. Because controller SRAM is lost, every subsequent wake-up must do a slow full refresh (4.2s with heavy black/white inversion flickering).
-- **`display.powerOff()` (~20 µA):** Turns off the high-voltage panel driving charge pumps (safe for e-ink particles, zero DC bias), but keeps the DESPI-C02 / GD7965 controller logic powered. This preserves the previous frame buffer, enabling instant, differential **fast partial refresh (1.6s)** without screen flash.
+- **`display.powerOff()` (~20 µA):** Turns off the high-voltage panel driving charge pumps (safe for e-ink particles, zero DC bias), but keeps the Waveshare HAT / GD7965 controller logic powered. This preserves the previous frame buffer, enabling instant, differential **fast partial refresh (1.6s)** without screen flash.
 - **Standby Impact:** 20 µA draws only `0.020 mA × 24h = 0.48 mAh/day`. Over 30 days, that is only **14.4 mAh** out of a 3000 mAh battery!
 
 ---

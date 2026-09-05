@@ -1,7 +1,7 @@
 Hardware list
 - FireBeetle 2 ESP32-E(N16R2)
-- GooDisplay DESPI-C02
-- Waveshare 7.5inch e-Paper
+- Waveshare e-Paper Driver HAT (Rev 2.3)
+- Waveshare 7.5inch e-Paper (V2 / 800x480)
 - ENS160+AHT21 Air Quality Sensor Module 
 - Battery 3.7 lipo 3.7v 11.1Wh 3000mah
 
@@ -19,7 +19,7 @@ The code should be in platformIO.
 Power Management:
  The device should sleep most of the time to save power. Interval to be research display update cycle for display and power usage.
 Display:
-The display is a 7.5inch e-Paper and uses a custom interface via the DESPI-C02.
+The display is a 7.5inch e-Paper (800x480) and uses a Waveshare e-Paper Driver HAT (Rev 2.3).
 Sensors:
 The sensors are connected to the ESP32-E via the I2C bus.
 Connectivity:
