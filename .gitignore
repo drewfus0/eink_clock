@@ -22,3 +22,7 @@ desktop.ini
 # Optional local configurations and secrets
 include/secrets.h
 *.local
+
+# Compiled binaries
+release/
+*.bin
