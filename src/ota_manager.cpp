@@ -1,7 +1,12 @@
 #include "ota_manager.h"
 #include "config.h"
 #include "time_sync.h"
+#include "ui.h"
+#include "display_config.h"
 #include <WiFi.h>
+#include <WiFiClientSecure.h>
+#include <HTTPClient.h>
+#include <HTTPUpdate.h>
 #include <ESPmDNS.h>
 #include <ArduinoOTA.h>
 #include <WebServer.h>
@@ -626,4 +631,140 @@ String getOtaWebUrl() {
         return "http://" + WiFi.localIP().toString() + "/update";
     }
     return "";
+}
+
+bool isVersionNewer(const char* remoteVer, const char* localVer) {
+    if (!remoteVer || !localVer) return false;
+
+    // Skip leading 'v' or 'V' if present
+    if (*remoteVer == 'v' || *remoteVer == 'V') remoteVer++;
+    if (*localVer == 'v' || *localVer == 'V') localVer++;
+
+    int rMaj = 0, rMin = 0, rPatch = 0;
+    int lMaj = 0, lMin = 0, lPatch = 0;
+
+    sscanf(remoteVer, "%d.%d.%d", &rMaj, &rMin, &rPatch);
+    sscanf(localVer, "%d.%d.%d", &lMaj, &lMin, &lPatch);
+
+    if (rMaj > lMaj) return true;
+    if (rMaj < lMaj) return false;
+
+    if (rMin > lMin) return true;
+    if (rMin < lMin) return false;
+
+    return (rPatch > lPatch);
+}
+
+bool checkAndApplyGithubOta() {
+    if (WiFi.status() != WL_CONNECTED) {
+        log_w("[GitHub OTA] Wi-Fi not connected. Skipping update check.");
+        return false;
+    }
+
+    log_i("[GitHub OTA] Checking for firmware updates from GitHub: %s", GITHUB_VERSION_URL);
+
+    WiFiClientSecure client;
+    client.setInsecure(); // Disable TLS validation for IoT microcontroller
+
+    HTTPClient http;
+    http.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
+    http.setTimeout(8000); // 8-second timeout
+
+    if (!http.begin(client, GITHUB_VERSION_URL)) {
+        log_w("[GitHub OTA] Failed to connect to version URL.");
+        return false;
+    }
+
+    http.addHeader("User-Agent", "ESP32-EinkClock/" FIRMWARE_VERSION);
+    int httpCode = http.GET();
+
+    if (httpCode != HTTP_CODE_OK) {
+        log_w("[GitHub OTA] HTTP GET returned code %d (%s)", httpCode, http.errorToString(httpCode).c_str());
+        http.end();
+        return false;
+    }
+
+    String payload = http.getString();
+    http.end();
+
+    log_i("[GitHub OTA] Version JSON: %s", payload.c_str());
+
+    // Extract "version" value
+    int vIdx = payload.indexOf("\"version\"");
+    if (vIdx < 0) {
+        log_w("[GitHub OTA] Could not find 'version' field in response.");
+        return false;
+    }
+
+    int colonIdx = payload.indexOf(':', vIdx);
+    int q1 = payload.indexOf('"', colonIdx);
+    int q2 = payload.indexOf('"', q1 + 1);
+    if (q1 < 0 || q2 <= q1) {
+        log_w("[GitHub OTA] Malformed version string in JSON.");
+        return false;
+    }
+
+    String remoteVersion = payload.substring(q1 + 1, q2);
+    remoteVersion.trim();
+
+    // Check optional custom "url" field
+    String firmwareUrl = GITHUB_FIRMWARE_URL;
+    int uIdx = payload.indexOf("\"url\"");
+    if (uIdx >= 0) {
+        int uColon = payload.indexOf(':', uIdx);
+        int uQ1 = payload.indexOf('"', uColon);
+        int uQ2 = payload.indexOf('"', uQ1 + 1);
+        if (uQ1 >= 0 && uQ2 > uQ1) {
+            firmwareUrl = payload.substring(uQ1 + 1, uQ2);
+            firmwareUrl.trim();
+        }
+    }
+
+    log_i("[GitHub OTA] Installed Version: v%s | Remote Version: v%s", FIRMWARE_VERSION, remoteVersion.c_str());
+
+    if (!isVersionNewer(remoteVersion.c_str(), FIRMWARE_VERSION)) {
+        log_i("[GitHub OTA] Firmware is up to date (v%s).", FIRMWARE_VERSION);
+        return false;
+    }
+
+    log_i("=================================================");
+    log_i("[GitHub OTA] NEW VERSION DETECTED: v%s", remoteVersion.c_str());
+    log_i("[GitHub OTA] Downloading binary from: %s", firmwareUrl.c_str());
+    log_i("=================================================");
+
+    // Render alert dialog on e-paper screen
+    char msg[96];
+    snprintf(msg, sizeof(msg), "Updating to v%s from GitHub Releases...", remoteVersion.c_str());
+    displayInitHardware(false);
+    renderOtaMessage("FIRMWARE UPDATE IN PROGRESS", msg);
+
+    // Setup HTTPUpdate with redirect support
+    httpUpdate.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
+    httpUpdate.rebootOnUpdate(true);
+
+    httpUpdate.onProgress([](int cur, int total) {
+        static int lastPct = -1;
+        int pct = (total > 0) ? (cur * 100) / total : 0;
+        if (pct % 20 == 0 && pct != lastPct) {
+            log_i("[GitHub OTA] Downloading: %d%% (%d / %d bytes)", pct, cur, total);
+            lastPct = pct;
+        }
+    });
+
+    // Stream download and flash directly into alternate OTA partition
+    t_httpUpdate_return ret = httpUpdate.update(client, firmwareUrl);
+
+    if (ret == HTTP_UPDATE_FAILED) {
+        log_e("[GitHub OTA] Update failed! Error (%d): %s", 
+              httpUpdate.getLastError(), httpUpdate.getLastErrorString().c_str());
+        return false;
+    } else if (ret == HTTP_UPDATE_NO_UPDATES) {
+        log_i("[GitHub OTA] No updates available.");
+        return false;
+    } else if (ret == HTTP_UPDATE_OK) {
+        log_i("[GitHub OTA] Update completed successfully! Rebooting clock...");
+        return true;
+    }
+
+    return false;
 }

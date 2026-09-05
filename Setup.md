@@ -27,9 +27,14 @@ The ESP32-E has WiFi for connecting to the internet for NTP time synchronization
 
 OTA Firmware Updates:
 1. Dual-slot partition table (partitions_16MB_ota.csv) with 6.25MB app0/app1 slots.
-2. Web Browser Upload: http://<IP>/update or http://eink-clock.local/update.
-3. PlatformIO CLI Upload: pio run -e firebeetle2_esp32e_ota -t upload.
-4. Deep-Sleep Integration:
-   - On boot / reset (or periodic 6-hour NTP sync), an OTA listening window is active for 30 seconds.
-   - The e-paper screen displays the active OTA URL in the status footer.
-   - Simply press the ESP32 RESET button whenever you want to open the wireless update window.
+2. Automated GitHub Releases Updates:
+   - Repository: https://github.com/drewfus0/eink_clock
+   - Every 6 hours during NTP sync (or on boot/reset), the clock checks version.json on GitHub.
+   - If a new version is detected, it automatically downloads firmware.bin from the GitHub Release, renders an updating dialog on the e-paper panel, flashes into the alternate slot, and reboots.
+   - Use `./create-release.sh` to auto-bump the version and build release binaries.
+   - GitHub Actions (.github/workflows/release.yml) automatically compiles and attaches firmware.bin whenever a git tag (e.g. `v1.0.1`) is pushed.
+3. Web Browser Upload: http://<IP>/update or http://eink-clock.local/update.
+4. PlatformIO CLI Upload: pio run -e firebeetle2_esp32e_ota -t upload.
+5. Deep-Sleep Integration:
+   - On cold boot or reset button press, a 30-second local update window opens.
+   - During normal unattended 6-hour syncs, Wi-Fi stays on for only ~2.3 seconds to sync NTP and check GitHub, preserving battery longevity.

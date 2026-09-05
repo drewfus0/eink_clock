@@ -22,3 +22,6 @@ void renderDashboard(const TimeInfo& timeInfo,
 
 // Windowed partial refresh for the 10-second circular indicator only
 void renderSecondsTickOnly(int seconds);
+
+// Render an OTA update modal dialog box on the screen
+void renderOtaMessage(const char* title, const char* message);

@@ -20,3 +20,10 @@ String getOtaIpAddress();
 
 // Get the OTA Web URL (e.g. "http://192.168.1.98/update")
 String getOtaWebUrl();
+
+// Check GitHub Releases for new firmware and perform update if available.
+// Returns true if update started (will reboot on completion), false if up to date or failed.
+bool checkAndApplyGithubOta();
+
+// Compare semantic versions (e.g. "1.0.1" > "1.0.0")
+bool isVersionNewer(const char* remoteVer, const char* localVer);

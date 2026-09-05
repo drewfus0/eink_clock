@@ -276,8 +276,42 @@ void renderDashboard(const TimeInfo& timeInfo,
             display.print(footerLeft);
         }
 
-        display.setCursor(560, 465);
-        display.print("Waveshare 7.5\" • ESP32-E");
+        display.setCursor(540, 465);
+        char footerRight[64];
+        snprintf(footerRight, sizeof(footerRight), "v%s • Waveshare 7.5\"", FIRMWARE_VERSION);
+        display.print(footerRight);
 
+    } while (display.nextPage());
+}
+
+void renderOtaMessage(const char* title, const char* message) {
+    int boxX = 120;
+    int boxY = 140;
+    int boxW = 560;
+    int boxH = 180;
+
+    display.setPartialWindow(boxX, boxY, boxW, boxH);
+    display.firstPage();
+    do {
+        display.fillRect(boxX, boxY, boxW, boxH, GxEPD_WHITE);
+        display.drawRoundRect(boxX, boxY, boxW, boxH, 8, GxEPD_BLACK);
+        display.drawRoundRect(boxX + 2, boxY + 2, boxW - 4, boxH - 4, 6, GxEPD_BLACK);
+        display.drawFastHLine(boxX, boxY + 50, boxW, GxEPD_BLACK);
+
+        display.setFont(&FreeSansBold12pt7b);
+        display.setTextColor(GxEPD_BLACK);
+        display.setCursor(boxX + 20, boxY + 35);
+        display.print(title);
+
+        display.setFont(&FreeSans9pt7b);
+        display.setCursor(boxX + 20, boxY + 85);
+        display.print(message);
+
+        display.setFont(&FreeSans9pt7b);
+        display.setCursor(boxX + 20, boxY + 120);
+        display.print("Please do not power off the device.");
+
+        display.drawRoundRect(boxX + 20, boxY + 140, boxW - 40, 16, 4, GxEPD_BLACK);
+        display.fillRoundRect(boxX + 22, boxY + 142, (boxW - 44) / 2, 12, 3, GxEPD_BLACK);
     } while (display.nextPage());
 }

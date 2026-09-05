@@ -37,16 +37,26 @@ void setup() {
         needNtpSync = true;
     }
 
-    // OTA update window is enabled on initial boot (or reset) and on periodic NTP sync
-    bool shouldOpenOta = (bootCount <= 1) || needNtpSync;
+    // Local OTA window (WebServer / ArduinoOTA) is opened on initial boot (or button reset)
+    bool openLocalOta = (bootCount <= 1);
 
     bool ntpSuccess = false;
     if (needNtpSync) {
         log_i("Initiating scheduled NTP synchronization...");
-        // Keep Wi-Fi connected if we need to open the OTA window
-        ntpSuccess = syncNtpTime(shouldOpenOta);
+        // Keep Wi-Fi connected to check GitHub releases and optionally open local OTA
+        ntpSuccess = syncNtpTime(true);
         if (ntpSuccess) {
             lastNtpSyncEpoch = time(nullptr);
+        }
+
+        // Check for GitHub Release OTA update while Wi-Fi is already active
+        if (WiFi.status() == WL_CONNECTED) {
+            checkAndApplyGithubOta();
+        }
+
+        // If local OTA window is not needed, shut down Wi-Fi immediately to conserve battery
+        if (!openLocalOta) {
+            disconnectWiFi();
         }
     } else {
         log_i("Skipping WiFi/NTP sync (next sync in %ld sec)", 
@@ -78,7 +88,7 @@ void setup() {
         sysState.ntpJustSynced = ntpSuccess;
         sysState.updateIntervalSec = DISPLAY_UPDATE_INTERVAL_SEC;
 
-        if (shouldOpenOta && WiFi.status() == WL_CONNECTED) {
+        if (openLocalOta && WiFi.status() == WL_CONNECTED) {
             snprintf(sysState.otaUrl, sizeof(sysState.otaUrl), "http://%s/update", WiFi.localIP().toString().c_str());
         }
 
@@ -113,7 +123,7 @@ void setup() {
     displayPowerOff();
 
     // If an OTA listening window is scheduled, open it now
-    if (shouldOpenOta) {
+    if (openLocalOta && WiFi.status() == WL_CONNECTED) {
         runOtaWindow(OTA_WINDOW_TIMEOUT_SEC);
     }
 

@@ -38,12 +38,20 @@
 #define FULL_REFRESH_CYCLE_COUNT      180
 
 // =============================================================================
-// Over-The-Air (OTA) Configuration
+// Firmware Version & Over-The-Air (OTA) Configuration
 // =============================================================================
-// Duration (in seconds) the clock listens for wireless updates on boot / reset
+#define FIRMWARE_VERSION              "1.0.0"
+
+// Duration (in seconds) the clock listens for local wireless updates on boot / reset
 #define OTA_WINDOW_TIMEOUT_SEC        30
 #define OTA_HOSTNAME                  "eink-clock"
 #define OTA_PORT                      3232
+
+// GitHub Releases Auto-Update Configuration
+#define GITHUB_REPO_OWNER             "drewfus0"
+#define GITHUB_REPO_NAME              "eink_clock"
+#define GITHUB_VERSION_URL            "https://raw.githubusercontent.com/drewfus0/eink_clock/main/version.json"
+#define GITHUB_FIRMWARE_URL           "https://github.com/drewfus0/eink_clock/releases/latest/download/firmware.bin"
 
 // =============================================================================
 // Hardware Pin Definitions (FireBeetle 2 ESP32-E)
