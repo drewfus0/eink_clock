@@ -42,12 +42,13 @@
 // Hardware Pin Definitions (FireBeetle 2 ESP32-E)
 // =============================================================================
 // GooDisplay DESPI-C02 to ESP32-E (Hardware VSPI)
-#define EPD_BUSY_PIN        4   // Silkscreen: "4/D12"  - Display BUSY status
+#define EPD_BUSY_PIN        -1  // Software timed (-1): guarantees full 4.2s refresh without premature busy-pin cutoff
 #define EPD_RST_PIN         25  // Silkscreen: "25/D2"  - Display Hardware Reset
 #define EPD_DC_PIN          26  // Silkscreen: "26/D3"  - Data / Command Selection
 #define EPD_CS_PIN          14  // Silkscreen: "14/D6"  - SPI Chip Select
-#define EPD_SCK_PIN         18  // Silkscreen: "18/MSIO"- Hardware SPI Clock
+#define EPD_SCK_PIN         18  // Silkscreen: "18/SCK" - Hardware SPI Clock
 #define EPD_MOSI_PIN        23  // Silkscreen: "23/MOSI"- Hardware SPI MOSI (DIN / SDI)
+#define EPD_PWR_PIN         13  // Silkscreen: "13/D7"  - Waveshare HAT Rev 2.3 PWR pin (controls power MOSFET)
 
 // I2C Pins for ENS160 + AHT21 sensor module
 #define I2C_SDA_PIN         21  // Silkscreen: "SDA"

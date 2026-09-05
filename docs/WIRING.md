@@ -4,30 +4,56 @@ This guide details the exact electrical connections between the **DFRobot FireBe
 
 ---
 
-## 1. GooDisplay DESPI-C02 to FireBeetle 2 ESP32-E (SPI)
+## 1. Adapter Board Wiring Options
 
-The DESPI-C02 is an interface/breakout board designed to bridge bare FPC ribbon cables from e-Paper panels to microcontrollers via standard SPI.
+### Option A: Waveshare e-Paper Driver HAT (Rev 2.3) [RECOMMENDED]
+
+The Waveshare e-Paper Driver HAT Rev 2.3 is the official driver board specifically designed for Waveshare 7.5-inch e-Paper panels.
+
+#### Front Slide Switches:
+- **Display Config Switch:** Set to **`B`** (configures driver for 7.5" panels).
+- **Interface Config Switch:** Set to **`0`** (selects standard 4-line SPI).
+
+#### Pin Connections to FireBeetle 2 ESP32-E:
+| Waveshare HAT Pin | FireBeetle 2 Silkscreen | ESP32 GPIO | Function | Critical Notes |
+|:---|:---|:---|:---|:---|
+| **VCC** | **3V3** | 3.3V | Power Supply | 3.3V logic & panel supply |
+| **GND** | **GND** | GND | Ground | Common reference |
+| **DIN** | **23/MOSI** | GPIO 23 | SPI MOSI | Master Out Slave In |
+| **CLK** | **18/SCK** (or MSIO) | GPIO 18 | SPI Clock | SPI Bus Clock |
+| **CS** | **14/D6** | GPIO 14 | SPI CS | Chip Select (Active LOW) |
+| **DC** | **26/D3** | GPIO 26 | Data/Command | HIGH = Data, LOW = Command |
+| **RST** | **25/D2** | GPIO 25 | Reset | Active LOW reset pulse |
+| **BUSY** | **4/D12** | GPIO 4 | Busy Status | Hardware status pin |
+| **PWR** | **13/D7** (or **3V3**) | GPIO 13 | **Power Switch** | Controls the HAT's onboard MOSFET. Plug into `13/D7` (or directly into `3V3`). |
+
+> [!TIP]
+> **Connecting `PWR` to `13/D7` (or `3V3`):**
+> - **Option A (Recommended):** Connect `PWR` to **`13/D7` (GPIO 13)**. The firmware automatically drives `13/D7` HIGH (3.3V) on boot and LOW on sleep.
+> - **Option B:** Connect `PWR` directly to **`3V3`** (together with VCC). This keeps the HAT permanently enabled.
+> *(Note: Do NOT use `19/MISO` for PWR because the ESP32 SPI hardware peripheral claims GPIO 19 as an SPI input, turning off power).*
+
+---
+
+### Option B: GooDisplay DESPI-C02 to FireBeetle 2 ESP32-E (SPI)
+
+The DESPI-C02 is a generic breakout board designed for GoodDisplay panels.
 
 | DESPI-C02 Pin | Wire Color (Suggested) | FireBeetle 2 PCB Silkscreen | ESP32 GPIO | Function | Notes |
 |:---|:---|:---|:---|:---|:---|
 | **VCC** (3.3V) | Orange | **3V3** | 3.3V Rail | Logic & Panel Power | **Must be 3.3V** (Do NOT use 5V) |
 | **GND** | Red | **GND** | Ground | Common Ground | Power & signal reference |
 | **SDI** (DIN / MOSI) | Brown (SDI) | **23/MOSI** | GPIO 23 | Hardware SPI MOSI | Master Out Slave In |
-| **SCK** (CLK) | Black | **18/MSIO** | GPIO 18 | Hardware SPI Clock | SPI Bus Clock (Silkscreen typo on some boards: MSIO = SCK) |
+| **SCK** (CLK) | Black | **18/SCK** (or MSIO)| GPIO 18 | Hardware SPI Clock | SPI Bus Clock |
 | **CS** | White | **14/D6** | GPIO 14 | SPI Chip Select | Active LOW |
 | **D/C** | Grey | **26/D3** | GPIO 26 | Data / Command | HIGH = Data, LOW = Command |
 | **RES** (RST) | Purple | **25/D2** | GPIO 25 | Display Reset | Active LOW |
-| **BUSY** | Yellow | **4/D12** *(See note below!)* | GPIO 4 | Panel Busy Status | Active HIGH when refreshing |
-
-> [!CAUTION]
-> **CRITICAL PIN NOTICE FOR BUSY: Use `4/D12`, NOT `0/D5`!**
-> - **Do NOT connect BUSY to `0/D5`:** On the FireBeetle 2 ESP32-E, the pin labeled `0/D5` is **GPIO 0**. GPIO 0 is the ESP32 boot/download strapping pin. Because the e-paper panel's BUSY line is LOW (0V) at power-up, connecting it to `0/D5` will force the ESP32 into ROM bootloader mode on startup, preventing your clock firmware from booting!
-> - **Connect BUSY to `4/D12`:** Pin **`4/D12`** is **GPIO 4**. This matches `#define EPD_BUSY_PIN 4` in `include/config.h` and is safe to use.
+| **BUSY** | Yellow | **4/D12** | GPIO 4 | Panel Busy Status | Active HIGH when refreshing |
 
 > [!IMPORTANT]
 > **DESPI-C02 RESE Switch Configuration:**
 > The DESPI-C02 board features a small slide switch or solder selector labeled **RESE** (0.47Ω vs 3Ω).
-> For large **7.5-inch displays**, the current limit resistor selector must typically be set to position **0.47Ω** (position "1" / 0.47R). Please confirm with your panel sticker (panels starting with GDEW075 use 0.47Ω).
+> For large **7.5-inch displays**, the current limit resistor selector must typically be set to position **0.47Ω** (position "1" / 0.47R).
 
 ---
 

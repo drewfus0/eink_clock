@@ -51,10 +51,8 @@ void setup() {
     bool fullRefresh = (bootCount <= 1) || ((bootCount % FULL_REFRESH_CYCLE_COUNT) == 0);
 
     // Initialize I2C sensors and display hardware
-    // Passing fullRefresh tells GxEPD2 whether to perform a fresh controller initialization (true)
-    // or preserve controller SRAM across deep sleep for fast differential partial refresh (false)
     initSensors();
-    displayInitHardware(fullRefresh);
+    displayInitHardware(true);
 
     // Read telemetry
     SensorData sensorData = readSensors();
@@ -67,8 +65,22 @@ void setup() {
     sysState.ntpJustSynced = ntpSuccess;
     sysState.updateIntervalSec = DISPLAY_UPDATE_INTERVAL_SEC;
 
-    log_i("Updating e-paper display (Full Refresh: %s)...", fullRefresh ? "YES" : "NO");
+    log_i("Pin states: BUSY(IO%d)=%d, RST(IO%d)=%d, CS(IO%d)=%d", 
+          EPD_BUSY_PIN, (EPD_BUSY_PIN >= 0) ? digitalRead(EPD_BUSY_PIN) : -1,
+          EPD_RST_PIN, digitalRead(EPD_RST_PIN),
+          EPD_CS_PIN, digitalRead(EPD_CS_PIN));
+
+    log_i("Updating e-paper display (Full Refresh: %s, Boot: %u)...", fullRefresh ? "YES" : "NO", bootCount);
+    uint32_t tStart = millis();
     renderDashboard(timeInfo, sensorData, batteryInfo, sysState, fullRefresh);
+    uint32_t tElapsed = millis() - tStart;
+    log_i("Display refresh call completed in %u ms", tElapsed);
+    
+    // Safety delay only if the driver returned prematurely (< 500ms)
+    if (tElapsed < 500) {
+        log_w("Display refresh returned prematurely (%u ms). Waiting 5s for physical waveform...", tElapsed);
+        delay(5000);
+    }
 
     // Power off panel driving voltages (charges turned off, but controller SRAM retained for fast differential refresh)
     log_i("Powering off display driver voltages...");
