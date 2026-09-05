@@ -470,7 +470,6 @@ void initOtaServices() {
     } else {
         log_i("mDNS responder started: http://%s.local", OTA_HOSTNAME);
         MDNS.addService("http", "tcp", 80);
-        MDNS.addService("arduino", "tcp", OTA_PORT);
     }
 
     // 2. Initialize ArduinoOTA (for PlatformIO CLI / IDE uploads)
