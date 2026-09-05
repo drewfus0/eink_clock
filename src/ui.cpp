@@ -47,6 +47,61 @@ static void drawCard(int x, int y, int w, int h, const char* title) {
     display.drawFastHLine(x + 10, y + 28, w - 20, GxEPD_BLACK);
 }
 
+// Draw animated circular seconds progress ring with 10-second tick marks
+static void drawSecondsRing(int cx, int cy, int radius, int seconds) {
+    // Outer concentric circle outlines
+    display.drawCircle(cx, cy, radius, GxEPD_BLACK);
+    display.drawCircle(cx, cy, radius - 1, GxEPD_BLACK);
+
+    // 6 Segment Pips (every 10 seconds: :00, :10, :20, :30, :40, :50)
+    // Angles: 0s=-90° (top), 10s=-30°, 20s=+30°, 30s=+90°, 40s=+150°, 50s=+210°
+    const int pipDist = radius - 9;
+    const int currentSecStep = (seconds / 10) * 10;
+
+    for (int i = 0; i < 6; i++) {
+        float angleDeg = (i * 60.0f) - 90.0f;
+        float angleRad = angleDeg * (3.14159265f / 180.0f);
+        int px = cx + (int)round(pipDist * cos(angleRad));
+        int py = cy + (int)round(pipDist * sin(angleRad));
+
+        int pipSec = i * 10;
+        if (seconds >= pipSec) {
+            // Elapsed ticks are filled solid black
+            display.fillCircle(px, py, 4, GxEPD_BLACK);
+        } else {
+            // Future ticks are hollow rings
+            display.drawCircle(px, py, 4, GxEPD_BLACK);
+        }
+    }
+
+    // Digital seconds indicator in the center
+    char secBuf[8];
+    snprintf(secBuf, sizeof(secBuf), ":%02d", currentSecStep);
+    display.setFont(&FreeSansBold12pt7b);
+    display.setTextSize(1);
+    display.setCursor(cx - 18, cy + 5);
+    display.print(secBuf);
+
+    // Sub-label "SEC"
+    display.setFont(&FreeSansBold9pt7b);
+    display.setCursor(cx - 14, cy + 22);
+    display.print("SEC");
+}
+
+void renderSecondsTickOnly(int seconds) {
+    const int boxX = 48;
+    const int boxY = 96;
+    const int boxW = 120;
+    const int boxH = 120;
+
+    display.setPartialWindow(boxX, boxY, boxW, boxH);
+    display.firstPage();
+    do {
+        display.fillRect(boxX, boxY, boxW, boxH, GxEPD_WHITE);
+        drawSecondsRing(105, 155, 48, seconds);
+    } while (display.nextPage());
+}
+
 void renderDashboard(const TimeInfo& timeInfo, 
                      const SensorData& sensorData, 
                      const BatteryInfo& batteryInfo, 
@@ -88,18 +143,21 @@ void renderDashboard(const TimeInfo& timeInfo,
         display.drawFastHLine(20, 42, 760, GxEPD_BLACK);
 
         // =====================================================================
-        // 2. Main Hero Section: TIME & DATE (Priorities 1 & 2)
+        // 2. Main Hero Section: CIRCLE SECONDS, TIME & DATE
         // =====================================================================
-        // Giant Time Display (e.g. "14:28")
+        // Circular Seconds Ring on the left
+        drawSecondsRing(105, 155, 48, timeInfo.seconds);
+
+        // Giant Time Display (e.g. "14:28") shifted to the right
         display.setFont(&FreeSansBold24pt7b);
-        display.setTextSize(3); // Magnified large crisp digital clock
-        display.setCursor(35, 175);
+        display.setTextSize(3);
+        display.setCursor(215, 175);
         display.print(timeInfo.timeStr);
 
         // Date Display
         display.setTextSize(1);
         display.setFont(&FreeSansBold18pt7b);
-        display.setCursor(45, 235);
+        display.setCursor(220, 235);
         display.print(timeInfo.fullDateStr);
 
         // Mid-screen separator rule
@@ -207,10 +265,16 @@ void renderDashboard(const TimeInfo& timeInfo,
         // =====================================================================
         display.setFont(&FreeSans9pt7b);
         display.setCursor(20, 465);
-        char footerLeft[64];
-        snprintf(footerLeft, sizeof(footerLeft), "Cycle #%u [%s] | Interval: %us", 
-                 sysState.bootCount, fullRefresh ? "Full" : "Fast", sysState.updateIntervalSec);
-        display.print(footerLeft);
+        if (sysState.otaUrl[0] != '\0') {
+            char footerOta[80];
+            snprintf(footerOta, sizeof(footerOta), "OTA: %s (or eink-clock.local)", sysState.otaUrl);
+            display.print(footerOta);
+        } else {
+            char footerLeft[64];
+            snprintf(footerLeft, sizeof(footerLeft), "Cycle #%u [%s] | Interval: %us", 
+                     sysState.bootCount, fullRefresh ? "Full" : "Fast", sysState.updateIntervalSec);
+            display.print(footerLeft);
+        }
 
         display.setCursor(560, 465);
         display.print("Waveshare 7.5\" • ESP32-E");

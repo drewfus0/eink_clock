@@ -22,7 +22,14 @@ Display:
 The display is a 7.5inch e-Paper (800x480) and uses a Waveshare e-Paper Driver HAT (Rev 2.3).
 Sensors:
 The sensors are connected to the ESP32-E via the I2C bus.
-Connectivity:
-The ESP32-E has WiFi for connecting to the internet for time sync and data updates.
+Connectivity & Updates:
+The ESP32-E has WiFi for connecting to the internet for NTP time synchronization and Over-The-Air (OTA) firmware updates.
 
-
+OTA Firmware Updates:
+1. Dual-slot partition table (partitions_16MB_ota.csv) with 6.25MB app0/app1 slots.
+2. Web Browser Upload: http://<IP>/update or http://eink-clock.local/update.
+3. PlatformIO CLI Upload: pio run -e firebeetle2_esp32e_ota -t upload.
+4. Deep-Sleep Integration:
+   - On boot / reset (or periodic 6-hour NTP sync), an OTA listening window is active for 30 seconds.
+   - The e-paper screen displays the active OTA URL in the status footer.
+   - Simply press the ESP32 RESET button whenever you want to open the wireless update window.

@@ -27,16 +27,23 @@
 // Power & Refresh Intervals
 // =============================================================================
 // Interval between display updates (in seconds).
-// For a standard minute-clock: 60 seconds.
-// For maximum battery life (indoor climate station): 300 seconds (5 min).
-#define DISPLAY_UPDATE_INTERVAL_SEC   60
+// 10 seconds for the animated circular seconds progress ring
+#define DISPLAY_UPDATE_INTERVAL_SEC   10
 
 // Sync time from NTP periodically instead of every wake-up to conserve battery.
 // 6 hours = 21600 seconds.
 #define NTP_SYNC_INTERVAL_HOURS       6
 
-// Periodic full refresh to eliminate e-paper ghosting (e.g., every 30 cycles)
-#define FULL_REFRESH_CYCLE_COUNT      30
+// Periodic full refresh to eliminate e-paper ghosting (every 30 minutes = 180 x 10s cycles)
+#define FULL_REFRESH_CYCLE_COUNT      180
+
+// =============================================================================
+// Over-The-Air (OTA) Configuration
+// =============================================================================
+// Duration (in seconds) the clock listens for wireless updates on boot / reset
+#define OTA_WINDOW_TIMEOUT_SEC        30
+#define OTA_HOSTNAME                  "eink-clock"
+#define OTA_PORT                      3232
 
 // =============================================================================
 // Hardware Pin Definitions (FireBeetle 2 ESP32-E)
