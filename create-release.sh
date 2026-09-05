@@ -87,21 +87,17 @@ echo "Binary: release/firmware.bin"
 echo "================================================="
 echo ""
 
-# 8. Check if GitHub CLI is available for 1-command publish
+# 8. Automatically publish via GitHub CLI if authenticated
 if command -v gh &> /dev/null && gh auth status &> /dev/null; then
-    read -p "Publish release v$NEW_VERSION to GitHub right now? [Y/n] " -n 1 -r
-    echo
-    if [[ $REPLY =~ ^[Yy]$ ]] || [[ -z $REPLY ]]; then
-        echo "Pushing commit and tag to GitHub..."
-        git push origin main --tags
-        echo "Creating GitHub Release with firmware.bin..."
-        gh release create "v$NEW_VERSION" release/firmware.bin version.json \
-            --title "Release v$NEW_VERSION" \
-            --notes "Automated firmware release v$NEW_VERSION for ESP32-E E-Paper Clock."
-        echo ""
-        echo "SUCCESS! Release v$NEW_VERSION is published to GitHub!"
-        exit 0
-    fi
+    echo "Pushing commit and tag to GitHub..."
+    git push origin main --tags
+    echo "Creating GitHub Release with firmware.bin..."
+    gh release create "v$NEW_VERSION" release/firmware.bin version.json \
+        --title "Release v$NEW_VERSION" \
+        --notes "Automated firmware release v$NEW_VERSION for ESP32-E E-Paper Clock."
+    echo ""
+    echo "SUCCESS! Release v$NEW_VERSION published to GitHub!"
+    exit 0
 fi
 
 echo "To publish this release to GitHub:"
