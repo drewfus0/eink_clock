@@ -47,9 +47,14 @@ void setup() {
               (long)((lastNtpSyncEpoch + (NTP_SYNC_INTERVAL_HOURS * 3600)) - currentEpoch));
     }
 
-    // Initialize I2C sensors and display
+    // Determine refresh mode: Full anti-ghosting refresh on boot or every FULL_REFRESH_CYCLE_COUNT
+    bool fullRefresh = (bootCount <= 1) || ((bootCount % FULL_REFRESH_CYCLE_COUNT) == 0);
+
+    // Initialize I2C sensors and display hardware
+    // Passing fullRefresh tells GxEPD2 whether to perform a fresh controller initialization (true)
+    // or preserve controller SRAM across deep sleep for fast differential partial refresh (false)
     initSensors();
-    displayInitHardware();
+    displayInitHardware(fullRefresh);
 
     // Read telemetry
     SensorData sensorData = readSensors();
@@ -62,15 +67,12 @@ void setup() {
     sysState.ntpJustSynced = ntpSuccess;
     sysState.updateIntervalSec = DISPLAY_UPDATE_INTERVAL_SEC;
 
-    // Determine refresh mode (Full refresh on first boot or every FULL_REFRESH_CYCLE_COUNT)
-    bool fullRefresh = (bootCount <= 1) || ((bootCount % FULL_REFRESH_CYCLE_COUNT) == 0);
-
     log_i("Updating e-paper display (Full Refresh: %s)...", fullRefresh ? "YES" : "NO");
     renderDashboard(timeInfo, sensorData, batteryInfo, sysState, fullRefresh);
 
-    // Deep sleep the e-paper panel to cut quiescent current
-    log_i("Putting display into hibernation...");
-    displayHibernate();
+    // Power off panel driving voltages (charges turned off, but controller SRAM retained for fast differential refresh)
+    log_i("Powering off display driver voltages...");
+    displayPowerOff();
 
     // Calculate sleep duration
     // If time is valid, synchronize sleep to the exact start of the next minute

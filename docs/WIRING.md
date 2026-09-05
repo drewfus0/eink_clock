@@ -10,14 +10,14 @@ The DESPI-C02 is an interface/breakout board designed to bridge bare FPC ribbon 
 
 | DESPI-C02 Pin | Wire Color (Suggested) | FireBeetle 2 ESP32-E Pin | Function | Notes |
 |:---|:---|:---|:---|:---|
-| **VCC** (3.3V) | 🔴 Red | **3V3** | Logic & Panel Power | **Must be 3.3V** (Do NOT use 5V) |
-| **GND** | ⚫ Black | **GND** | Common Ground | Power & signal reference |
-| **SDI** (DIN / MOSI) | 🟡 Yellow | **IO23** (MOSI) | Hardware SPI MOSI | Master Out Slave In |
-| **SCK** (CLK) | 🟠 Orange | **IO18** (SCK) | Hardware SPI Clock | SPI Bus Clock |
-| **CS** | 🔵 Blue | **IO14** (D10) | SPI Chip Select | Active LOW |
-| **D/C** | 🟢 Green | **IO26** (D3) | Data / Command | HIGH = Data, LOW = Command |
-| **RES** (RST) | ⚪ White | **IO25** (D2) | Display Reset | Active LOW |
-| **BUSY** | 🟣 Purple | **IO4** (D0) | Panel Busy Status | Active HIGH when refreshing |
+| **VCC** (3.3V) | Orange | ##3V3## **3V3** | Logic & Panel Power | **Must be 3.3V** (Do NOT use 5V) |
+| **GND** | Red | ##GND## **GND** | Common Ground | Power & signal reference |
+| **SDI** (DIN / MOSI) | Brown (SDI) | ##23/MOSI## **IO23** (MOSI) | Hardware SPI MOSI | Master Out Slave In |
+| **SCK** (CLK) | Black | ##18/MSIO## **IO18** (SCK) | Hardware SPI Clock | SPI Bus Clock |
+| **CS** | White | ##14/D6## **IO14** (D10) | SPI Chip Select | Active LOW |
+| **D/C** | Grey | ##26/D3## **IO26** (D3) | Data / Command | HIGH = Data, LOW = Command |
+| **RES** (RST) | Purple | ##25/D2## **IO25** (D2) | Display Reset | Active LOW |
+| **BUSY** | Yellow | ##0/D5## **IO4** (D0) | Panel Busy Status | Active HIGH when refreshing |
 
 > [!IMPORTANT]
 > **DESPI-C02 RESE Switch Configuration:**
@@ -32,10 +32,10 @@ The combined ENS160 (Air Quality: AQI, eCO2, TVOC) and AHT21 (Temperature & Rela
 
 | Sensor Pin | Wire Color (Suggested) | FireBeetle 2 ESP32-E Pin | Function | Notes |
 |:---|:---|:---|:---|:---|
-| **VCC** | 🔴 Red | **3V3** | Power Supply | 3.3V operation |
-| **GND** | ⚫ Black | **GND** | Common Ground | Ground |
-| **SDA** | 🔵 Blue / Green | **IO21** (SDA) | I2C Data Line | 0x38 (AHT21), 0x53 or 0x52 (ENS160) |
-| **SCL** | 🟡 Yellow | **IO22** (SCL) | I2C Clock Line | 100 kHz standard clock |
+| **VCC** | Black | #### **3V3** | Power Supply | 3.3V operation |
+| **GND** | White | #### **GND** | Common Ground | Ground |
+| **SDA** | Purple | #### **IO21** (SDA) | I2C Data Line | 0x38 (AHT21), 0x53 or 0x52 (ENS160) |
+| **SCL** | Grey | #### **IO22** (SCL) | I2C Clock Line | 100 kHz standard clock |
 
 *Both sensors reside on the same two I2C wires. The firmware automatically detects the ENS160 on either 0x53 or 0x52, and AHT21 on 0x38.*
 

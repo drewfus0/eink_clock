@@ -35,6 +35,8 @@
 extern GxEPD2_DISPLAY_CLASS display;
 
 // Helper management routines
-void displayInitHardware();
+// initial = true on first boot / full anti-ghosting refresh
+// initial = false on deep-sleep wake to preserve controller SRAM for fast differential refresh
+void displayInitHardware(bool initial = true);
 void displayPowerOff();
 void displayHibernate();

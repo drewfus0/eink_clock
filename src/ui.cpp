@@ -54,7 +54,11 @@ void renderDashboard(const TimeInfo& timeInfo,
                      bool fullRefresh) {
     
     // GxEPD2 paged rendering loop ensures safe memory usage and clean output
-    display.setFullWindow();
+    if (fullRefresh) {
+        display.setFullWindow();
+    } else {
+        display.setPartialWindow(0, 0, display.width(), display.height());
+    }
     display.firstPage();
     do {
         display.fillScreen(GxEPD_WHITE);
@@ -204,8 +208,8 @@ void renderDashboard(const TimeInfo& timeInfo,
         display.setFont(&FreeSans9pt7b);
         display.setCursor(20, 465);
         char footerLeft[64];
-        snprintf(footerLeft, sizeof(footerLeft), "Cycle #%u | Update Interval: %us", 
-                 sysState.bootCount, sysState.updateIntervalSec);
+        snprintf(footerLeft, sizeof(footerLeft), "Cycle #%u [%s] | Interval: %us", 
+                 sysState.bootCount, fullRefresh ? "Full" : "Fast", sysState.updateIntervalSec);
         display.print(footerLeft);
 
         display.setCursor(560, 465);
