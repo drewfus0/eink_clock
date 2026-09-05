@@ -23,5 +23,8 @@ void renderDashboard(const TimeInfo& timeInfo,
 // Windowed partial refresh for the 10-second circular indicator only
 void renderSecondsTickOnly(int seconds);
 
-// Render an OTA update modal dialog box on the screen
-void renderOtaMessage(const char* title, const char* message);
+// Display full OTA update screen with clean background on start of update
+void showOtaScreen(const char* title, const char* versionInfo);
+
+// Partial refresh of the OTA progress bar and percentage (called every ~2s)
+void updateOtaProgress(int percent, uint32_t currentBytes, uint32_t totalBytes);

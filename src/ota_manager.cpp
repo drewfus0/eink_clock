@@ -435,7 +435,7 @@ static const char UPDATE_HTML[] PROGMEM = R"rawliteral(
                 fileInput.disabled = false;
             };
 
-            xhr.open('POST', '/update');
+            xhr.open('POST', '/update?size=' + file.size);
             xhr.send(formData);
         }
     </script>
@@ -478,20 +478,31 @@ void initOtaServices() {
 
     ArduinoOTA.onStart([]() {
         otaActive = true;
-        String type = (ArduinoOTA.getCommand() == U_FLASH) ? "sketch" : "filesystem";
+        String type = (ArduinoOTA.getCommand() == U_FLASH) ? "Firmware" : "Filesystem";
         log_i("[ArduinoOTA] Start updating %s...", type.c_str());
+        char sub[64];
+        snprintf(sub, sizeof(sub), "Receiving %s via port %d...", type.c_str(), OTA_PORT);
+        showOtaScreen("ARDUINOTA UPDATE", sub);
     });
 
     ArduinoOTA.onEnd([]() {
         log_i("[ArduinoOTA] Update completed successfully! Rebooting...");
+        updateOtaProgress(100, 100, 100);
     });
 
     ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
+        static uint32_t lastArduOtaMs = 0;
         static unsigned int lastPercent = 0;
-        unsigned int percent = (progress / (total / 100));
+        unsigned int percent = (total > 0) ? (progress * 100 / total) : 0;
         if (percent % 10 == 0 && percent != lastPercent) {
             log_i("[ArduinoOTA] Progress: %u%%", percent);
             lastPercent = percent;
+        }
+
+        uint32_t now = millis();
+        if (now - lastArduOtaMs >= 2000 || percent >= 100) {
+            lastArduOtaMs = now;
+            updateOtaProgress(percent, progress, total);
         }
     });
 
@@ -523,6 +534,9 @@ void initOtaServices() {
     });
 
     // POST /update handler for browser multipart uploads
+    static size_t webOtaTotalSize = 0;
+    static uint32_t webOtaLastDisplayMs = 0;
+
     server.on("/update", HTTP_POST, []() {
         server.sendHeader("Connection", "close");
         if (Update.hasError()) {
@@ -538,17 +552,42 @@ void initOtaServices() {
             otaActive = true;
             log_i("[WebOTA] Upload started: %s", upload.filename.c_str());
 
-            if (!Update.begin(UPDATE_SIZE_UNKNOWN)) {
+            webOtaTotalSize = 0;
+            if (server.hasArg("size")) {
+                webOtaTotalSize = (size_t)server.arg("size").toInt();
+            }
+
+            char sub[96];
+            if (webOtaTotalSize > 0) {
+                snprintf(sub, sizeof(sub), "File: %s (%u KB)", 
+                         upload.filename.c_str(), (unsigned int)(webOtaTotalSize / 1024));
+            } else {
+                snprintf(sub, sizeof(sub), "File: %s", upload.filename.c_str());
+            }
+            showOtaScreen("WEB BROWSER UPDATE", sub);
+            webOtaLastDisplayMs = millis();
+
+            size_t updateSize = (webOtaTotalSize > 0) ? webOtaTotalSize : UPDATE_SIZE_UNKNOWN;
+            if (!Update.begin(updateSize)) {
                 Update.printError(Serial);
                 otaActive = false;
             }
         } else if (upload.status == UPLOAD_FILE_WRITE) {
             if (Update.write(upload.buf, upload.currentSize) != upload.currentSize) {
                 Update.printError(Serial);
+            } else {
+                uint32_t now = millis();
+                if (now - webOtaLastDisplayMs >= 2000) {
+                    webOtaLastDisplayMs = now;
+                    int pct = (webOtaTotalSize > 0) ? ((upload.totalSize * 100) / webOtaTotalSize) : 0;
+                    if (pct > 99) pct = 99;
+                    updateOtaProgress(pct, upload.totalSize, webOtaTotalSize);
+                }
             }
         } else if (upload.status == UPLOAD_FILE_END) {
             if (Update.end(true)) {
                 log_i("[WebOTA] Update success: %u bytes written. Rebooting clock...", upload.totalSize);
+                updateOtaProgress(100, upload.totalSize, (webOtaTotalSize > 0 ? webOtaTotalSize : upload.totalSize));
             } else {
                 Update.printError(Serial);
                 otaActive = false;
@@ -731,22 +770,30 @@ bool checkAndApplyGithubOta() {
     log_i("[GitHub OTA] Downloading binary from: %s", firmwareUrl.c_str());
     log_i("=================================================");
 
-    // Render alert dialog on e-paper screen
+    // Render clean full-screen update dialog on e-paper screen (full hardware init wipes ghosting)
     char msg[96];
-    snprintf(msg, sizeof(msg), "Updating to v%s from GitHub Releases...", remoteVersion.c_str());
-    displayInitHardware(false);
-    renderOtaMessage("FIRMWARE UPDATE IN PROGRESS", msg);
+    snprintf(msg, sizeof(msg), "Downloading v%s from GitHub Releases...", remoteVersion.c_str());
+    showOtaScreen("GITHUB OTA UPDATE", msg);
 
     // Setup HTTPUpdate with redirect support
     httpUpdate.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
     httpUpdate.rebootOnUpdate(true);
 
     httpUpdate.onProgress([](int cur, int total) {
-        static int lastPct = -1;
+        static uint32_t lastDisplayUpdateMs = 0;
+        static int lastLoggedPct = -1;
         int pct = (total > 0) ? (cur * 100) / total : 0;
-        if (pct % 20 == 0 && pct != lastPct) {
+        if (pct > 100) pct = 100;
+
+        if (pct % 10 == 0 && pct != lastLoggedPct) {
             log_i("[GitHub OTA] Downloading: %d%% (%d / %d bytes)", pct, cur, total);
-            lastPct = pct;
+            lastLoggedPct = pct;
+        }
+
+        uint32_t now = millis();
+        if (now - lastDisplayUpdateMs >= 2000 || pct == 100) {
+            lastDisplayUpdateMs = now;
+            updateOtaProgress(pct, (uint32_t)cur, (uint32_t)total);
         }
     });
 

@@ -284,34 +284,85 @@ void renderDashboard(const TimeInfo& timeInfo,
     } while (display.nextPage());
 }
 
-void renderOtaMessage(const char* title, const char* message) {
-    int boxX = 120;
-    int boxY = 140;
-    int boxW = 560;
-    int boxH = 180;
+static const int PROG_X = 120;
+static const int PROG_Y = 220;
+static const int PROG_W = 560;
+static const int PROG_H = 110;
 
-    display.setPartialWindow(boxX, boxY, boxW, boxH);
+void showOtaScreen(const char* title, const char* versionInfo) {
+    // Perform full hardware initialization with clear waveform to wipe previous clock display
+    displayInitHardware(true);
+    display.setFullWindow();
     display.firstPage();
     do {
-        display.fillRect(boxX, boxY, boxW, boxH, GxEPD_WHITE);
-        display.drawRoundRect(boxX, boxY, boxW, boxH, 8, GxEPD_BLACK);
-        display.drawRoundRect(boxX + 2, boxY + 2, boxW - 4, boxH - 4, 6, GxEPD_BLACK);
-        display.drawFastHLine(boxX, boxY + 50, boxW, GxEPD_BLACK);
+        display.fillScreen(GxEPD_WHITE);
+
+        // Outer & Inner Cards
+        display.drawRoundRect(20, 20, 760, 440, 12, GxEPD_BLACK);
+        display.drawRoundRect(24, 24, 752, 432, 10, GxEPD_BLACK);
+
+        // Header Title
+        display.setFont(&FreeSansBold18pt7b);
+        display.setTextColor(GxEPD_BLACK);
+        display.setCursor(60, 85);
+        display.print(title ? title : "FIRMWARE UPDATE IN PROGRESS");
+        display.drawFastHLine(60, 110, 680, GxEPD_BLACK);
+
+        // Subtitle / Version Info
+        display.setFont(&FreeSansBold12pt7b);
+        display.setCursor(60, 160);
+        display.print(versionInfo ? versionInfo : "Receiving new firmware binary...");
+
+        // Initial Progress Bar Frame (0%)
+        display.drawRoundRect(PROG_X + 20, PROG_Y + 20, 520, 28, 6, GxEPD_BLACK);
+        display.setFont(&FreeSansBold12pt7b);
+        display.setCursor(PROG_X + 20, PROG_Y + 85);
+        display.print("Connecting and starting download (0%)...");
+
+        // Bottom Warning Message
+        display.setFont(&FreeSans9pt7b);
+        display.setCursor(60, 410);
+        display.print("Writing to flash partition... Please keep power connected.");
+
+        display.setCursor(540, 410);
+        display.print("ESP32-E E-Paper Clock");
+
+    } while (display.nextPage());
+}
+
+void updateOtaProgress(int percent, uint32_t currentBytes, uint32_t totalBytes) {
+    if (percent < 0) percent = 0;
+    if (percent > 100) percent = 100;
+
+    // Partial update solely for the progress bar bounding box
+    display.setPartialWindow(PROG_X, PROG_Y, PROG_W, PROG_H);
+    display.firstPage();
+    do {
+        display.fillRect(PROG_X, PROG_Y, PROG_W, PROG_H, GxEPD_WHITE);
+        display.drawRoundRect(PROG_X + 20, PROG_Y + 20, 520, 28, 6, GxEPD_BLACK);
+
+        if (percent > 0) {
+            int fillW = (514 * percent) / 100;
+            if (fillW > 514) fillW = 514;
+            display.fillRoundRect(PROG_X + 23, PROG_Y + 23, fillW, 22, 4, GxEPD_BLACK);
+        }
 
         display.setFont(&FreeSansBold12pt7b);
         display.setTextColor(GxEPD_BLACK);
-        display.setCursor(boxX + 20, boxY + 35);
-        display.print(title);
+        display.setCursor(PROG_X + 20, PROG_Y + 85);
 
-        display.setFont(&FreeSans9pt7b);
-        display.setCursor(boxX + 20, boxY + 85);
-        display.print(message);
+        char pBuf[64];
+        if (percent >= 100) {
+            snprintf(pBuf, sizeof(pBuf), "Complete 100%%! Finalizing & Rebooting...");
+        } else if (totalBytes > 0) {
+            snprintf(pBuf, sizeof(pBuf), "Updating: %d%% (%u / %u KB)", 
+                     percent, (unsigned int)(currentBytes / 1024), (unsigned int)(totalBytes / 1024));
+        } else {
+            snprintf(pBuf, sizeof(pBuf), "Updating: %d%% (%u KB written)", 
+                     percent, (unsigned int)(currentBytes / 1024));
+        }
+        display.print(pBuf);
 
-        display.setFont(&FreeSans9pt7b);
-        display.setCursor(boxX + 20, boxY + 120);
-        display.print("Please do not power off the device.");
-
-        display.drawRoundRect(boxX + 20, boxY + 140, boxW - 40, 16, 4, GxEPD_BLACK);
-        display.fillRoundRect(boxX + 22, boxY + 142, (boxW - 44) / 2, 12, 3, GxEPD_BLACK);
     } while (display.nextPage());
 }
+

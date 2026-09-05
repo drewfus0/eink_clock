@@ -76,7 +76,7 @@ echo "Firmware copied to: release/firmware.bin"
 # 7. Git commit and tag
 echo ""
 echo "Committing version bump to git..."
-git add include/config.h version.json
+git add include/config.h version.json src/ include/
 git commit -m "Release v$NEW_VERSION" || true
 git tag -f "v$NEW_VERSION"
 
