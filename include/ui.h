@@ -11,6 +11,9 @@ struct SystemState {
     bool ntpJustSynced = false;
     uint32_t updateIntervalSec = 60;
     char otaUrl[64] = "";
+    float lastNtpDiffSec = 0.0f;
+    bool hasNtpDiff = false;
+    int32_t secToNextNtp = 0;
 };
 
 // Render full clock and telemetry dashboard to e-paper buffer

@@ -40,7 +40,7 @@
 // =============================================================================
 // Firmware Version & Over-The-Air (OTA) Configuration
 // =============================================================================
-#define FIRMWARE_VERSION              "1.0.4"
+#define FIRMWARE_VERSION              "1.0.5"
 
 // Duration (in seconds) the clock listens for local wireless updates on boot / reset
 #define OTA_WINDOW_TIMEOUT_SEC        30

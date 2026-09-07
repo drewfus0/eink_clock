@@ -12,6 +12,8 @@
 // Variables preserved in ESP32 RTC Slow Memory across deep sleep
 RTC_DATA_ATTR static uint32_t bootCount = 0;
 RTC_DATA_ATTR static time_t lastNtpSyncEpoch = 0;
+RTC_DATA_ATTR static float rtcNtpDiffSec = 0.0f;
+RTC_DATA_ATTR static bool rtcHasNtpDiff = false;
 
 void setup() {
     Serial.begin(115200);
@@ -47,6 +49,10 @@ void setup() {
         ntpSuccess = syncNtpTime(true);
         if (ntpSuccess) {
             lastNtpSyncEpoch = time(nullptr);
+            if (hasLastNtpDiff()) {
+                rtcNtpDiffSec = getLastNtpDiffSec();
+                rtcHasNtpDiff = true;
+            }
         }
 
         // Check for GitHub Release OTA update while Wi-Fi is already active
@@ -87,6 +93,20 @@ void setup() {
         sysState.lastNtpSyncEpoch = lastNtpSyncEpoch;
         sysState.ntpJustSynced = ntpSuccess;
         sysState.updateIntervalSec = DISPLAY_UPDATE_INTERVAL_SEC;
+        sysState.lastNtpDiffSec = rtcNtpDiffSec;
+        sysState.hasNtpDiff = rtcHasNtpDiff;
+
+        // Calculate time remaining until next scheduled NTP synchronization
+        time_t nowEpoch = time(nullptr);
+        int32_t secToNext = 0;
+        if (lastNtpSyncEpoch > 0 && nowEpoch >= lastNtpSyncEpoch) {
+            int32_t elapsedSinceSync = (int32_t)(nowEpoch - lastNtpSyncEpoch);
+            secToNext = (int32_t)(NTP_SYNC_INTERVAL_HOURS * 3600) - elapsedSinceSync;
+            if (secToNext < 0) secToNext = 0;
+        } else {
+            secToNext = (int32_t)(NTP_SYNC_INTERVAL_HOURS * 3600);
+        }
+        sysState.secToNextNtp = secToNext;
 
         if (openLocalOta && WiFi.status() == WL_CONNECTED) {
             snprintf(sysState.otaUrl, sizeof(sysState.otaUrl), "http://%s/update", WiFi.localIP().toString().c_str());

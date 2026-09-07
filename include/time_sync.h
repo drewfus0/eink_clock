@@ -28,3 +28,7 @@ void disconnectWiFi();
 
 // Formats the current RTC time
 TimeInfo getCurrentTimeInfo();
+
+// Returns the measured time difference (NTP - RTC) in seconds from the most recent sync
+float getLastNtpDiffSec();
+bool hasLastNtpDiff();

@@ -127,11 +127,22 @@ void renderDashboard(const TimeInfo& timeInfo,
         display.print("E-INK SMART CLOCK");
 
         display.setFont(&FreeSans9pt7b);
-        display.setCursor(220, 26);
-        if (sysState.ntpJustSynced) {
-            display.print("WiFi: NTP Synced");
-        } else if (timeInfo.isValid) {
-            display.print("WiFi: Off (RTC Active)");
+        display.setCursor(215, 26);
+        if (timeInfo.isValid) {
+            int nextHours = sysState.secToNextNtp / 3600;
+            int nextMins = (sysState.secToNextNtp % 3600) / 60;
+            char statusBuf[96];
+
+            const char* stateLabel = sysState.ntpJustSynced ? "NTP Synced" : "RTC Active";
+
+            if (sysState.hasNtpDiff) {
+                snprintf(statusBuf, sizeof(statusBuf), "%s • Next in %dh %02dm • Diff: %+.2fs",
+                         stateLabel, nextHours, nextMins, sysState.lastNtpDiffSec);
+            } else {
+                snprintf(statusBuf, sizeof(statusBuf), "%s • Next in %dh %02dm",
+                         stateLabel, nextHours, nextMins);
+            }
+            display.print(statusBuf);
         } else {
             display.print("WiFi: Offline");
         }
