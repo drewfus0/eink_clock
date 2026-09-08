@@ -330,7 +330,7 @@ void renderDashboard(const TimeInfo& timeInfo,
 
         display.setCursor(540, 465);
         char footerRight[64];
-        snprintf(footerRight, sizeof(footerRight), "version: %s • Waveshare 7.5\"", FIRMWARE_VERSION);
+        snprintf(footerRight, sizeof(footerRight), "version: %s", FIRMWARE_VERSION);
         display.print(footerRight);
 
     } while (display.nextPage());
