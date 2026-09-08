@@ -271,16 +271,29 @@ void renderDashboard(const TimeInfo& timeInfo,
                 display.setCursor(card3X + 20, cardY + 75);
                 display.print(sensorData.getAqiDescription());
 
-                char aqiNum[16];
-                snprintf(aqiNum, sizeof(aqiNum), "(AQI %d)", sensorData.aqiUba);
+                char aqiNum[32];
+                if (sensorData.ensStale) {
+                    if (sensorData.ensStaleMinutes > 1) {
+                        snprintf(aqiNum, sizeof(aqiNum), "(AQI %d) [%um old]", sensorData.aqiUba, sensorData.ensStaleMinutes);
+                    } else {
+                        snprintf(aqiNum, sizeof(aqiNum), "(AQI %d) [missed]", sensorData.aqiUba);
+                    }
+                } else {
+                    snprintf(aqiNum, sizeof(aqiNum), "(AQI %d)", sensorData.aqiUba);
+                }
                 display.setFont(&FreeSans9pt7b);
                 display.setCursor(card3X + 20, cardY + 102);
                 display.print(aqiNum);
 
                 // Detailed gas telemetry: eCO2 and TVOC
-                char metricsBuf[36];
-                snprintf(metricsBuf, sizeof(metricsBuf), "eCO2: %u ppm | %u ppb", 
-                         sensorData.eco2Ppm, sensorData.tvocPpb);
+                char metricsBuf[40];
+                if (sensorData.ensStale) {
+                    snprintf(metricsBuf, sizeof(metricsBuf), "eCO2: ~%u ppm | %u ppb", 
+                             sensorData.eco2Ppm, sensorData.tvocPpb);
+                } else {
+                    snprintf(metricsBuf, sizeof(metricsBuf), "eCO2: %u ppm | %u ppb", 
+                             sensorData.eco2Ppm, sensorData.tvocPpb);
+                }
                 display.setFont(&FreeSans9pt7b);
                 display.setCursor(card3X + 20, cardY + 130);
                 display.print(metricsBuf);

@@ -14,6 +14,8 @@ struct SensorData {
 
     uint8_t ensValidity = 0;   // 0: Normal, 1: Warm-up, 2: Initial start-up, 3: Invalid
     bool ensWarmingUp = false;
+    bool ensStale = false;     // True if reading is retained/old from previous cycle
+    uint8_t ensStaleMinutes = 0; // Number of minutes reading has been retained
 
     const char* getAqiDescription() const {
         if (ensWarmingUp) return "WARMING UP";
