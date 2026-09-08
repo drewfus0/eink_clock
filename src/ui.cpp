@@ -1,5 +1,6 @@
 #include "ui.h"
 #include "display_config.h"
+#include "FreeSansBold70pt7b.h"
 #include <Fonts/FreeSansBold24pt7b.h>
 #include <Fonts/FreeSansBold18pt7b.h>
 #include <Fonts/FreeSansBold12pt7b.h>
@@ -159,9 +160,9 @@ void renderDashboard(const TimeInfo& timeInfo,
         // Circular Seconds Ring on the left
         drawSecondsRing(105, 155, 48, timeInfo.seconds);
 
-        // Giant Time Display (e.g. "14:28") shifted to the right
-        display.setFont(&FreeSansBold24pt7b);
-        display.setTextSize(3);
+        // Giant Time Display (e.g. "14:28") rendered natively at 1:1 pixel resolution (no 3x3 blockiness)
+        display.setFont(&FreeSansBold70pt7b);
+        display.setTextSize(1);
         display.setCursor(215, 175);
         display.print(timeInfo.timeStr);
 
