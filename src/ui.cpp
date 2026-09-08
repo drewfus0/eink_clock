@@ -25,17 +25,24 @@ static void drawBattery(int x, int y, uint8_t percentage, float voltage, bool co
             display.fillRect(x + 3, y + 3, innerW, h - 6, GxEPD_BLACK);
         }
 
-        // Text label
+        // Text label: space between percent number and % symbol, and dynamic right alignment
         char buf[32];
-        snprintf(buf, sizeof(buf), "%d%%  (%.2fV)", percentage, voltage);
+        snprintf(buf, sizeof(buf), "%d %% (%.2fV)", percentage, voltage);
         display.setFont(&FreeSansBold9pt7b);
-        display.setCursor(x - 110, y + 14);
+        int16_t bx, by;
+        uint16_t bw, bh;
+        display.getTextBounds(buf, 0, y + 14, &bx, &by, &bw, &bh);
+        display.setCursor(x - 8 - bw - bx, y + 14);
         display.print(buf);
     } else {
         // USB / No Battery indicator
         display.setFont(&FreeSans9pt7b);
-        display.setCursor(x - 85, y + 14);
-        display.print("USB PWR");
+        const char* pwrStr = "USB PWR";
+        int16_t bx, by;
+        uint16_t bw, bh;
+        display.getTextBounds(pwrStr, 0, y + 14, &bx, &by, &bw, &bh);
+        display.setCursor(x - 8 - bw - bx, y + 14);
+        display.print(pwrStr);
     }
 }
 
