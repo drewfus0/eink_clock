@@ -61,16 +61,23 @@ bool initSensors() {
         uint8_t devStatus = 0;
         ens160.read(ENS16X_REGISTER_ADDRESS_DEVICE_STATUS, &devStatus, 1);
         uint8_t validity = (devStatus >> 2) & 0x03;
+        bool isRunning = (devStatus & ENS16X_DEVICE_STATUS_ACTIVE) != 0 && (devStatus & ENS16X_DEVICE_STATUS_ERROR) == 0;
 
-        if (readOpOk && (opMode == ENS16X_OPERATING_MODE_STANDARD)) {
-            log_i("ENS160 at 0x%02X is ALREADY ACTIVE (OPMODE=0x%02X, Status=0x%02X, Validity=%u). Preserving continuous measurement state!",
+        if (readOpOk && isRunning && (opMode == ENS16X_OPERATING_MODE_STANDARD)) {
+            log_i("ENS160 at 0x%02X is ACTUALLY RUNNING (OPMODE=0x%02X, Status=0x%02X, Validity=%u). Preserving continuous measurement state!",
                   detectedAddr, opMode, devStatus, validity);
-        } else if (readOpOk) {
-            log_i("ENS160 at 0x%02X not in standard mode (OPMODE=0x%02X). Starting standard measurement mode (warm-up begins)...",
-                  detectedAddr, opMode);
-            ens160.startStandardMeasure();
         } else {
-            log_w("ENS160 at 0x%02X could not read OPMODE (I2C glitch). Skipping startStandardMeasure to avoid resetting warm-up.", detectedAddr);
+            log_i("ENS160 at 0x%02X not actively running (OPMODE=0x%02X, Status=0x%02X, STATAS=%d). Starting standard measurement mode...",
+                  detectedAddr, opMode, devStatus, isRunning ? 1 : 0);
+            ens160.setOperatingMode(ENS16X_OPERATING_MODE_IDLE);
+            delay(50);
+            ens160.setOperatingMode(ENS16X_OPERATING_MODE_STANDARD);
+            delay(50);
+
+            // Re-read status to confirm
+            ens160.read(ENS16X_REGISTER_ADDRESS_DEVICE_STATUS, &devStatus, 1);
+            log_i("ENS160 started. New Status=0x%02X (STATAS=%d, Validity=%u)",
+                  devStatus, (devStatus & ENS16X_DEVICE_STATUS_ACTIVE) ? 1 : 0, (devStatus >> 2) & 0x03);
         }
     } else {
         log_e("Failed to detect ENS160 sensor at both 0x53 and 0x52!");
