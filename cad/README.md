@@ -8,10 +8,10 @@ A two-piece, toolless snap-fit desk stand enclosure tailored for the Waveshare 7
 
 | File | Description |
 | :--- | :--- |
-| [`front_bezel.stl`](file:///home/drewfus/.icons/eink_clock/cad/front_bezel.stl) | Front frame with active viewing window, glass retention shelf, and snap receivers |
-| [`rear_stand.stl`](file:///home/drewfus/.icons/eink_clock/cad/rear_stand.stl) | Rear housing with integrated 70° desk stand, component bays, USB-C slot, and snap tabs |
-| [`eink_clock_enclosure.scad`](file:///home/drewfus/.icons/eink_clock/cad/eink_clock_enclosure.scad) | Parametric OpenSCAD source file for modifying tolerances or tilt angles |
-| [`generate_stl.py`](file:///home/drewfus/.icons/eink_clock/cad/generate_stl.py) | Standalone Python script to regenerate binary STLs directly |
+| [`front_bezel.stl`](front_bezel.stl) | Front frame with active viewing window, glass retention shelf, and snap receivers |
+| [`rear_stand.stl`](rear_stand.stl) | Rear housing with integrated 70° desk stand, component bays, USB-C slot, and snap tabs |
+| [`eink_clock_enclosure.scad`](eink_clock_enclosure.scad) | Parametric OpenSCAD source file for modifying tolerances or tilt angles |
+| [`generate_stl.py`](generate_stl.py) | Standalone Python script to regenerate binary STLs directly |
 
 ---
 
