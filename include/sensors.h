@@ -12,7 +12,11 @@ struct SensorData {
     bool ahtSuccess = false;
     bool ensSuccess = false;
 
+    uint8_t ensValidity = 0;   // 0: Normal, 1: Warm-up, 2: Initial start-up, 3: Invalid
+    bool ensWarmingUp = false;
+
     const char* getAqiDescription() const {
+        if (ensWarmingUp) return "WARMING UP";
         switch (aqiUba) {
             case 1: return "EXCELLENT";
             case 2: return "GOOD";
