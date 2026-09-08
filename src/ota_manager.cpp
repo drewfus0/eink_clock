@@ -699,7 +699,16 @@ bool checkAndApplyGithubOta() {
         return false;
     }
 
-    log_i("[GitHub OTA] Checking for firmware updates from GitHub: %s", GITHUB_VERSION_URL);
+    // Append timestamp query parameter to bypass Fastly CDN 5-minute cache (max-age=300)
+    char versionUrlWithBust[160];
+    time_t nowEpoch = time(nullptr);
+    if (nowEpoch > 1600000000) {
+        snprintf(versionUrlWithBust, sizeof(versionUrlWithBust), "%s?t=%lu", GITHUB_VERSION_URL, (unsigned long)nowEpoch);
+    } else {
+        snprintf(versionUrlWithBust, sizeof(versionUrlWithBust), "%s?t=%lu", GITHUB_VERSION_URL, (unsigned long)millis());
+    }
+
+    log_i("[GitHub OTA] Checking for firmware updates from GitHub: %s", versionUrlWithBust);
 
     WiFiClientSecure client;
     client.setInsecure(); // Disable TLS validation for IoT microcontroller
@@ -708,12 +717,14 @@ bool checkAndApplyGithubOta() {
     http.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
     http.setTimeout(8000); // 8-second timeout
 
-    if (!http.begin(client, GITHUB_VERSION_URL)) {
+    if (!http.begin(client, versionUrlWithBust)) {
         log_w("[GitHub OTA] Failed to connect to version URL.");
         return false;
     }
 
     http.addHeader("User-Agent", "ESP32-EinkClock/" FIRMWARE_VERSION);
+    http.addHeader("Cache-Control", "no-cache");
+    http.addHeader("Pragma", "no-cache");
     int httpCode = http.GET();
 
     if (httpCode != HTTP_CODE_OK) {

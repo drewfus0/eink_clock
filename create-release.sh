@@ -97,8 +97,8 @@ if command -v gh &> /dev/null && gh auth status &> /dev/null; then
         --notes "Automated firmware release v$NEW_VERSION for ESP32-E E-Paper Clock."
     echo ""
     echo "SUCCESS! Release v$NEW_VERSION published to GitHub!"
-    ## add curl request and output to console
-    curl -s https://raw.githubusercontent.com/drewfus0/eink_clock/main/version.json 
+    ## Bypass Fastly CDN 5-minute cache with a timestamp query param
+    curl -s "https://raw.githubusercontent.com/drewfus0/eink_clock/main/version.json?$(date +%s)" 
     exit 0
 fi
 
