@@ -108,6 +108,7 @@ void renderSecondsTickOnly(int seconds) {
         display.fillRect(boxX, boxY, boxW, boxH, GxEPD_WHITE);
         drawSecondsRing(105, 155, 48, seconds);
     } while (display.nextPage());
+    display.nextPageToPrevious();
 }
 
 void renderDashboard(const TimeInfo& timeInfo, 
@@ -334,6 +335,11 @@ void renderDashboard(const TimeInfo& timeInfo,
         display.print(footerRight);
 
     } while (display.nextPage());
+
+    // Explicitly sync current buffer to controller previous buffer (0x10)
+    // so differential refresh on subsequent updates knows precisely which pixels were black,
+    // ensuring old digits are fully cleared to white without ghosting/overlap.
+    display.nextPageToPrevious();
 }
 
 static const int PROG_X = 120;

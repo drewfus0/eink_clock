@@ -34,8 +34,8 @@
 // 6 hours = 21600 seconds.
 #define NTP_SYNC_INTERVAL_HOURS       6
 
-// Periodic full refresh to eliminate e-paper ghosting (every 30 minutes = 180 x 10s cycles)
-#define FULL_REFRESH_CYCLE_COUNT      180
+// Periodic full refresh to eliminate e-paper ghosting (every 10 minutes = 60 x 10s cycles)
+#define FULL_REFRESH_CYCLE_COUNT      60
 
 // =============================================================================
 // Firmware Version & Over-The-Air (OTA) Configuration
