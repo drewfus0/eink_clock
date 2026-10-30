@@ -55,62 +55,6 @@ static void drawCard(int x, int y, int w, int h, const char* title) {
     display.drawFastHLine(x + 10, y + 28, w - 20, GxEPD_BLACK);
 }
 
-// Draw animated circular seconds progress ring with 10-second tick marks
-static void drawSecondsRing(int cx, int cy, int radius, int seconds) {
-    // Outer concentric circle outlines
-    display.drawCircle(cx, cy, radius, GxEPD_BLACK);
-    display.drawCircle(cx, cy, radius - 1, GxEPD_BLACK);
-
-    // 6 Segment Pips (every 10 seconds: :00, :10, :20, :30, :40, :50)
-    // Angles: 0s=-90° (top), 10s=-30°, 20s=+30°, 30s=+90°, 40s=+150°, 50s=+210°
-    const int pipDist = radius - 9;
-    const int currentSecStep = (seconds / 10) * 10;
-
-    for (int i = 0; i < 6; i++) {
-        float angleDeg = (i * 60.0f) - 90.0f;
-        float angleRad = angleDeg * (3.14159265f / 180.0f);
-        int px = cx + (int)round(pipDist * cos(angleRad));
-        int py = cy + (int)round(pipDist * sin(angleRad));
-
-        int pipSec = i * 10;
-        if (seconds >= pipSec) {
-            // Elapsed ticks are filled solid black
-            display.fillCircle(px, py, 4, GxEPD_BLACK);
-        } else {
-            // Future ticks are hollow rings
-            display.drawCircle(px, py, 4, GxEPD_BLACK);
-        }
-    }
-
-    // Digital seconds indicator in the center
-    char secBuf[8];
-    snprintf(secBuf, sizeof(secBuf), ":%02d", currentSecStep);
-    display.setFont(&FreeSansBold12pt7b);
-    display.setTextSize(1);
-    display.setCursor(cx - 18, cy + 5);
-    display.print(secBuf);
-
-    // Sub-label "SEC"
-    display.setFont(&FreeSansBold9pt7b);
-    display.setCursor(cx - 14, cy + 22);
-    display.print("SEC");
-}
-
-void renderSecondsTickOnly(int seconds) {
-    const int boxX = 48;
-    const int boxY = 96;
-    const int boxW = 120;
-    const int boxH = 120;
-
-    display.setPartialWindow(boxX, boxY, boxW, boxH);
-    display.firstPage();
-    do {
-        display.fillRect(boxX, boxY, boxW, boxH, GxEPD_WHITE);
-        drawSecondsRing(105, 155, 48, seconds);
-    } while (display.nextPage());
-    display.nextPageToPrevious();
-}
-
 void renderDashboard(const TimeInfo& timeInfo, 
                      const SensorData& sensorData, 
                      const BatteryInfo& batteryInfo, 
@@ -163,21 +107,26 @@ void renderDashboard(const TimeInfo& timeInfo,
         display.drawFastHLine(20, 42, 760, GxEPD_BLACK);
 
         // =====================================================================
-        // 2. Main Hero Section: CIRCLE SECONDS, TIME & DATE
+        // 2. Main Hero Section: TIME & DATE
         // =====================================================================
-        // Circular Seconds Ring on the left
-        drawSecondsRing(105, 155, 48, timeInfo.seconds);
-
-        // Giant Time Display (e.g. "14:28") rendered natively at 1:1 pixel resolution (no 3x3 blockiness)
+        // Giant Time Display (e.g. "14:28") rendered natively at 1:1 pixel resolution (centered)
         display.setFont(&FreeSansBold70pt7b);
         display.setTextSize(1);
-        display.setCursor(215, 175);
+        int16_t tbx, tby;
+        uint16_t tbw, tbh;
+        display.getTextBounds(timeInfo.timeStr, 0, 175, &tbx, &tby, &tbw, &tbh);
+        int timeX = (display.width() - tbw) / 2 - tbx;
+        display.setCursor(timeX, 175);
         display.print(timeInfo.timeStr);
 
-        // Date Display
-        display.setTextSize(1);
+        // Date Display (centered)
         display.setFont(&FreeSansBold18pt7b);
-        display.setCursor(220, 235);
+        display.setTextSize(1);
+        int16_t dbx, dby;
+        uint16_t dbw, dbh;
+        display.getTextBounds(timeInfo.fullDateStr, 0, 235, &dbx, &dby, &dbw, &dbh);
+        int dateX = (display.width() - dbw) / 2 - dbx;
+        display.setCursor(dateX, 235);
         display.print(timeInfo.fullDateStr);
 
         // Mid-screen separator rule

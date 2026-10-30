@@ -27,20 +27,20 @@
 // Power & Refresh Intervals
 // =============================================================================
 // Interval between display updates (in seconds).
-// 10 seconds for the animated circular seconds progress ring
-#define DISPLAY_UPDATE_INTERVAL_SEC   10
+// Updated every minute (60 seconds)
+#define DISPLAY_UPDATE_INTERVAL_SEC   60
 
 // Sync time from NTP periodically instead of every wake-up to conserve battery.
 // 6 hours = 21600 seconds.
 #define NTP_SYNC_INTERVAL_HOURS       6
 
-// Periodic full refresh to eliminate e-paper ghosting (every 10 minutes = 60 x 10s cycles)
-#define FULL_REFRESH_CYCLE_COUNT      60
+// Periodic full refresh to eliminate e-paper ghosting (every 30 minutes = 30 x 1m cycles)
+#define FULL_REFRESH_CYCLE_COUNT      30
 
 // =============================================================================
 // Firmware Version & Over-The-Air (OTA) Configuration
 // =============================================================================
-#define FIRMWARE_VERSION              "1.0.12"
+#define FIRMWARE_VERSION              "1.0.13"
 
 // Duration (in seconds) the clock listens for local wireless updates on boot / reset
 #define OTA_WINDOW_TIMEOUT_SEC        30

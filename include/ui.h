@@ -23,9 +23,6 @@ void renderDashboard(const TimeInfo& timeInfo,
                      const SystemState& sysState,
                      bool fullRefresh = false);
 
-// Windowed partial refresh for the 10-second circular indicator only
-void renderSecondsTickOnly(int seconds);
-
 // Display full OTA update screen with clean background on start of update
 void showOtaScreen(const char* title, const char* versionInfo);
 

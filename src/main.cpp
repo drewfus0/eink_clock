@@ -75,59 +75,47 @@ void setup() {
     // Determine refresh mode: Full anti-ghosting refresh on boot or every FULL_REFRESH_CYCLE_COUNT
     bool fullRefresh = (bootCount <= 1) || ((bootCount % FULL_REFRESH_CYCLE_COUNT) == 0);
 
-    // Full dashboard update on boot or on minute rollover (:00 to :09)
-    bool isMinuteRollover = (bootCount <= 1) || (timeInfo.seconds < 10);
-
     uint32_t tStart = millis();
 
-    if (isMinuteRollover || fullRefresh) {
-        // Full dashboard update: Read sensors and redraw the entire screen
-        initSensors();
-        displayInitHardware(fullRefresh);
+    // Full dashboard update: Read sensors and redraw the entire screen
+    initSensors();
+    displayInitHardware(fullRefresh);
 
-        SensorData sensorData = readSensors();
-        BatteryInfo batteryInfo = readBattery();
+    SensorData sensorData = readSensors();
+    BatteryInfo batteryInfo = readBattery();
 
-        SystemState sysState;
-        sysState.bootCount = bootCount;
-        sysState.lastNtpSyncEpoch = lastNtpSyncEpoch;
-        sysState.ntpJustSynced = ntpSuccess;
-        sysState.updateIntervalSec = DISPLAY_UPDATE_INTERVAL_SEC;
-        sysState.lastNtpDiffSec = rtcNtpDiffSec;
-        sysState.hasNtpDiff = rtcHasNtpDiff;
+    SystemState sysState;
+    sysState.bootCount = bootCount;
+    sysState.lastNtpSyncEpoch = lastNtpSyncEpoch;
+    sysState.ntpJustSynced = ntpSuccess;
+    sysState.updateIntervalSec = DISPLAY_UPDATE_INTERVAL_SEC;
+    sysState.lastNtpDiffSec = rtcNtpDiffSec;
+    sysState.hasNtpDiff = rtcHasNtpDiff;
 
-        // Calculate time remaining until next scheduled NTP synchronization
-        time_t nowEpoch = time(nullptr);
-        int32_t secToNext = 0;
-        if (lastNtpSyncEpoch > 0 && nowEpoch >= lastNtpSyncEpoch) {
-            int32_t elapsedSinceSync = (int32_t)(nowEpoch - lastNtpSyncEpoch);
-            secToNext = (int32_t)(NTP_SYNC_INTERVAL_HOURS * 3600) - elapsedSinceSync;
-            if (secToNext < 0) secToNext = 0;
-        } else {
-            secToNext = (int32_t)(NTP_SYNC_INTERVAL_HOURS * 3600);
-        }
-        sysState.secToNextNtp = secToNext;
-
-        if (openLocalOta && WiFi.status() == WL_CONNECTED) {
-            snprintf(sysState.otaUrl, sizeof(sysState.otaUrl), "http://%s/update", WiFi.localIP().toString().c_str());
-        }
-
-        log_i("Pin states: BUSY(IO%d)=%d, RST(IO%d)=%d, CS(IO%d)=%d", 
-              EPD_BUSY_PIN, (EPD_BUSY_PIN >= 0) ? digitalRead(EPD_BUSY_PIN) : -1,
-              EPD_RST_PIN, digitalRead(EPD_RST_PIN),
-              EPD_CS_PIN, digitalRead(EPD_CS_PIN));
-
-        log_i("Updating full dashboard (Full: %s, Boot: %u, Sec: :%02d)...", 
-              fullRefresh ? "YES" : "NO", bootCount, timeInfo.seconds);
-        renderDashboard(timeInfo, sensorData, batteryInfo, sysState, fullRefresh);
+    // Calculate time remaining until next scheduled NTP synchronization
+    time_t nowEpoch = time(nullptr);
+    int32_t secToNext = 0;
+    if (lastNtpSyncEpoch > 0 && nowEpoch >= lastNtpSyncEpoch) {
+        int32_t elapsedSinceSync = (int32_t)(nowEpoch - lastNtpSyncEpoch);
+        secToNext = (int32_t)(NTP_SYNC_INTERVAL_HOURS * 3600) - elapsedSinceSync;
+        if (secToNext < 0) secToNext = 0;
     } else {
-        // Intermediate 10-second tick (:10, :20, :30, :40, :50):
-        // Skip I2C sensor bus and update only the circular seconds window!
-        displayInitHardware(false);
-
-        log_i("Updating seconds ring only (Sec: :%02d, Boot: %u)...", timeInfo.seconds, bootCount);
-        renderSecondsTickOnly(timeInfo.seconds);
+        secToNext = (int32_t)(NTP_SYNC_INTERVAL_HOURS * 3600);
     }
+    sysState.secToNextNtp = secToNext;
+
+    if (openLocalOta && WiFi.status() == WL_CONNECTED) {
+        snprintf(sysState.otaUrl, sizeof(sysState.otaUrl), "http://%s/update", WiFi.localIP().toString().c_str());
+    }
+
+    log_i("Pin states: BUSY(IO%d)=%d, RST(IO%d)=%d, CS(IO%d)=%d", 
+          EPD_BUSY_PIN, (EPD_BUSY_PIN >= 0) ? digitalRead(EPD_BUSY_PIN) : -1,
+          EPD_RST_PIN, digitalRead(EPD_RST_PIN),
+          EPD_CS_PIN, digitalRead(EPD_CS_PIN));
+
+    log_i("Updating display (Full: %s, Boot: %u, Time: %s)...", 
+          fullRefresh ? "YES" : "NO", bootCount, timeInfo.timeStr);
+    renderDashboard(timeInfo, sensorData, batteryInfo, sysState, fullRefresh);
 
     uint32_t tElapsed = millis() - tStart;
     log_i("Display refresh call completed in %u ms", tElapsed);
@@ -147,14 +135,14 @@ void setup() {
         runOtaWindow(OTA_WINDOW_TIMEOUT_SEC);
     }
 
-    // Calculate sleep duration synchronized to the exact next 10-second boundary
+    // Calculate sleep duration synchronized to the exact next minute boundary
     uint64_t sleepSeconds = DISPLAY_UPDATE_INTERVAL_SEC;
     time_t now = time(nullptr);
     struct tm tm_now;
     localtime_r(&now, &tm_now);
     if (timeInfo.isValid || tm_now.tm_year > (2020 - 1900)) {
-        int secRemaining = 10 - (tm_now.tm_sec % 10);
-        if (secRemaining <= 0) secRemaining = 10;
+        int secRemaining = 60 - tm_now.tm_sec;
+        if (secRemaining <= 0) secRemaining = 60;
         sleepSeconds = secRemaining;
     }
 
