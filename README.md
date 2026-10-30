@@ -6,15 +6,15 @@
 
 An ultra-low-power, battery-friendly smart desk clock and environmental monitor built with the **DFRobot FireBeetle 2 ESP32-E**, a **Waveshare 7.5" V2 (800x480) E-Paper display**, and an **ENS160 + AHT21 sensor module**.
 
-Features automated **dual-mode Over-The-Air (OTA) updates** (GitHub Releases & local Web Browser), a fast 10-second circular seconds ring with differential refresh, and a custom **3D-printable 70° desk stand enclosure**.
+Features automated **dual-mode Over-The-Air (OTA) updates** (GitHub Releases & local Web Browser), 1-minute display updates with differential refresh, and a custom **3D-printable 70° desk stand enclosure**.
 
 ---
 
 ## ✨ Features
 
 - **High-Contrast 7.5" E-Paper Display (800x480)**:
-  - Giant, crisp time typography and full date display.
-  - Animated circular 60-second progress ring with 10-second tick updates.
+  - Dual layout hero section: Giant digital time & date on left 2/3rds + Railway Station analog clock face with spade/leaf hands on right 1/3rd.
+  - Efficient 1-minute updates synchronized to RTC/NTP boundaries.
   - Periodic anti-ghosting full refresh with differential partial updates for minimal power consumption.
 - **Precision Environmental Telemetry**:
   - **AHT21**: Ambient temperature (°C / °F) and relative humidity with comfort indicators.
