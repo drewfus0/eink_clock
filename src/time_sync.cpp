@@ -152,9 +152,13 @@ TimeInfo getCurrentTimeInfo() {
         strftime(info.dayOfWeekStr, sizeof(info.dayOfWeekStr), "%A", &timeinfo);
         strftime(info.dateStr, sizeof(info.dateStr), "%d %B %Y", &timeinfo);
         strftime(info.fullDateStr, sizeof(info.fullDateStr), "%A, %d %b %Y", &timeinfo);
+        info.hours = timeinfo.tm_hour;
+        info.minutes = timeinfo.tm_min;
         info.seconds = timeinfo.tm_sec;
     } else {
         info.isValid = false;
+        info.hours = 0;
+        info.minutes = 0;
         info.seconds = 0;
         snprintf(info.timeStr, sizeof(info.timeStr), "--:--");
         snprintf(info.ampmStr, sizeof(info.ampmStr), "--");

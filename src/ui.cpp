@@ -55,6 +55,146 @@ static void drawCard(int x, int y, int w, int h, const char* title) {
     display.drawFastHLine(x + 10, y + 28, w - 20, GxEPD_BLACK);
 }
 
+static void drawThickLine(float x1, float y1, float x2, float y2, float thickness, uint16_t color) {
+    float dx = x2 - x1;
+    float dy = y2 - y1;
+    float len = sqrtf(dx * dx + dy * dy);
+    if (len < 0.1f) return;
+    float px = -dy / len * (thickness * 0.5f);
+    float py = dx / len * (thickness * 0.5f);
+    display.fillTriangle((int)roundf(x1 + px), (int)roundf(y1 + py),
+                         (int)roundf(x2 + px), (int)roundf(y2 + py),
+                         (int)roundf(x2 - px), (int)roundf(y2 - py), color);
+    display.fillTriangle((int)roundf(x1 + px), (int)roundf(y1 + py),
+                         (int)roundf(x2 - px), (int)roundf(y2 - py),
+                         (int)roundf(x1 - px), (int)roundf(y1 - py), color);
+}
+
+static void drawTaperedHand(int cx, int cy, float length, float baseW, float tipW, float angleRad, float tailLen, uint16_t color) {
+    float cosA = cosf(angleRad - 1.5707963f);
+    float sinA = sinf(angleRad - 1.5707963f);
+    float perpX = -sinA;
+    float perpY = cosA;
+
+    float tipX = cx + length * cosA;
+    float tipY = cy + length * sinA;
+
+    float brX = cx + perpX * (baseW * 0.5f);
+    float brY = cy + perpY * (baseW * 0.5f);
+    float blX = cx - perpX * (baseW * 0.5f);
+    float blY = cy - perpY * (baseW * 0.5f);
+
+    float trX = tipX + perpX * (tipW * 0.5f);
+    float trY = tipY + perpY * (tipW * 0.5f);
+    float tlX = tipX - perpX * (tipW * 0.5f);
+    float tlY = tipY - perpY * (tipW * 0.5f);
+
+    display.fillTriangle((int)roundf(blX), (int)roundf(blY),
+                         (int)roundf(tlX), (int)roundf(tlY),
+                         (int)roundf(trX), (int)roundf(trY), color);
+    display.fillTriangle((int)roundf(blX), (int)roundf(blY),
+                         (int)roundf(trX), (int)roundf(trY),
+                         (int)roundf(brX), (int)roundf(brY), color);
+
+    if (tailLen > 0.0f) {
+        float tailX = cx - tailLen * cosA;
+        float tailY = cy - tailLen * sinA;
+        float tailW = baseW * 0.7f;
+        float tarX = tailX + perpX * (tailW * 0.5f);
+        float tarY = tailY + perpY * (tailW * 0.5f);
+        float talX = tailX - perpX * (tailW * 0.5f);
+        float talY = tailY - perpY * (tailW * 0.5f);
+
+        display.fillTriangle((int)roundf(blX), (int)roundf(blY),
+                             (int)roundf(talX), (int)roundf(talY),
+                             (int)roundf(tarX), (int)roundf(tarY), color);
+        display.fillTriangle((int)roundf(blX), (int)roundf(blY),
+                             (int)roundf(tarX), (int)roundf(tarY),
+                             (int)roundf(brX), (int)roundf(brY), color);
+    }
+}
+
+// Draw Option 2B Railway Station analog clock face with full 1-12 Arabic numerals
+static void drawAnalogClock(int cx, int cy, int R, int hour, int minute) {
+    // 1. Double Chapter Ring
+    display.drawCircle(cx, cy, R, GxEPD_BLACK);
+    display.drawCircle(cx, cy, R - 1, GxEPD_BLACK);
+    const int rMid = R - 13;
+    display.drawCircle(cx, cy, rMid, GxEPD_BLACK);
+
+    // 2. 60 Minute Ticks
+    for (int m = 0; m < 60; m++) {
+        float angle = (m * 6.0f - 90.0f) * (3.14159265f / 180.0f);
+        float cosA = cosf(angle);
+        float sinA = sinf(angle);
+        if (m % 5 == 0) {
+            // 5-minute ticks bridge the chapter track (3px wide)
+            float x1 = cx + R * cosA;
+            float y1 = cy + R * sinA;
+            float x2 = cx + rMid * cosA;
+            float y2 = cy + rMid * sinA;
+            drawThickLine(x1, y1, x2, y2, 3.0f, GxEPD_BLACK);
+        } else {
+            // Minute ticks (1px line, 5px long)
+            int x1 = (int)roundf(cx + R * cosA);
+            int y1 = (int)roundf(cy + R * sinA);
+            int x2 = (int)roundf(cx + (R - 5) * cosA);
+            int y2 = (int)roundf(cy + (R - 5) * sinA);
+            display.drawLine(x1, y1, x2, y2, GxEPD_BLACK);
+        }
+    }
+
+    // 3. Full Arabic Numbers (1 through 12)
+    display.setFont(&FreeSansBold9pt7b);
+    display.setTextColor(GxEPD_BLACK);
+    const float rNum = rMid - 14.0f;
+    for (int h = 1; h <= 12; h++) {
+        char buf[4];
+        snprintf(buf, sizeof(buf), "%d", h);
+        float angle = (h * 30.0f - 90.0f) * (3.14159265f / 180.0f);
+        int16_t bx, by;
+        uint16_t bw, bh;
+        display.getTextBounds(buf, 0, 0, &bx, &by, &bw, &bh);
+        int nx = (int)roundf(cx + rNum * cosf(angle)) - (bw / 2) - bx;
+        int ny = (int)roundf(cy + rNum * sinf(angle)) - (bh / 2) - by;
+        display.setCursor(nx, ny);
+        display.print(buf);
+    }
+
+    // 4. Hands
+    float minAngle = (minute * 6.0f) * (3.14159265f / 180.0f);
+    float hourAngle = (((hour % 12) + minute / 60.0f) * 30.0f) * (3.14159265f / 180.0f);
+
+    // Hour hand: Spade hand with circular eye
+    float hLen = R * 0.52f;
+    drawTaperedHand(cx, cy, hLen * 0.65f, 5.0f, 3.0f, hourAngle, 8.0f, GxEPD_BLACK);
+
+    float eyeDist = hLen * 0.72f;
+    float eyeX = cx + eyeDist * cosf(hourAngle - 1.5707963f);
+    float eyeY = cy + eyeDist * sinf(hourAngle - 1.5707963f);
+    display.fillCircle((int)roundf(eyeX), (int)roundf(eyeY), 6, GxEPD_BLACK);
+    display.fillCircle((int)roundf(eyeX), (int)roundf(eyeY), 2, GxEPD_WHITE);
+
+    float tipDist = hLen;
+    float tipX = cx + tipDist * cosf(hourAngle - 1.5707963f);
+    float tipY = cy + tipDist * sinf(hourAngle - 1.5707963f);
+    float sideAng = hourAngle - 1.5707963f;
+    float px = -sinf(sideAng) * 5.0f;
+    float py = cosf(sideAng) * 5.0f;
+    display.fillTriangle((int)roundf(eyeX + px), (int)roundf(eyeY + py),
+                         (int)roundf(tipX), (int)roundf(tipY),
+                         (int)roundf(eyeX - px), (int)roundf(eyeY - py), GxEPD_BLACK);
+
+    // Minute hand: Tapered leaf hand
+    float mLen = R * 0.82f;
+    drawTaperedHand(cx, cy, mLen, 6.0f, 2.0f, minAngle, 14.0f, GxEPD_BLACK);
+
+    // Center concentric pivot
+    display.fillCircle(cx, cy, 6, GxEPD_BLACK);
+    display.fillCircle(cx, cy, 3, GxEPD_WHITE);
+    display.fillCircle(cx, cy, 1, GxEPD_BLACK);
+}
+
 void renderDashboard(const TimeInfo& timeInfo, 
                      const SensorData& sensorData, 
                      const BatteryInfo& batteryInfo, 
@@ -107,27 +247,33 @@ void renderDashboard(const TimeInfo& timeInfo,
         display.drawFastHLine(20, 42, 760, GxEPD_BLACK);
 
         // =====================================================================
-        // 2. Main Hero Section: TIME & DATE
+        // 2. Main Hero Section: DIGITAL (LEFT 2/3) + ANALOG CLOCK (RIGHT 1/3)
         // =====================================================================
-        // Giant Time Display (e.g. "14:28") rendered natively at 1:1 pixel resolution (centered)
+        // Giant Time Display (e.g. "14:28") centered horizontally in left 2/3rds (x = 20 .. 520)
         display.setFont(&FreeSansBold70pt7b);
         display.setTextSize(1);
         int16_t tbx, tby;
         uint16_t tbw, tbh;
         display.getTextBounds(timeInfo.timeStr, 0, 175, &tbx, &tby, &tbw, &tbh);
-        int timeX = (display.width() - tbw) / 2 - tbx;
+        int timeX = 20 + (500 - tbw) / 2 - tbx;
         display.setCursor(timeX, 175);
         display.print(timeInfo.timeStr);
 
-        // Date Display (centered)
+        // Date Display centered horizontally in left 2/3rds
         display.setFont(&FreeSansBold18pt7b);
         display.setTextSize(1);
         int16_t dbx, dby;
         uint16_t dbw, dbh;
         display.getTextBounds(timeInfo.fullDateStr, 0, 235, &dbx, &dby, &dbw, &dbh);
-        int dateX = (display.width() - dbw) / 2 - dbx;
+        int dateX = 20 + (500 - dbw) / 2 - dbx;
         display.setCursor(dateX, 235);
         display.print(timeInfo.fullDateStr);
+
+        // Subtle vertical hairline divider between digital and analog sections
+        display.drawFastVLine(525, 55, 195, GxEPD_BLACK);
+
+        // Analog Clock on the right 1/3rd (Option 2B: Railway Station with Full 1-12 Arabic Numbers)
+        drawAnalogClock(655, 153, 88, timeInfo.hours, timeInfo.minutes);
 
         // Mid-screen separator rule
         display.drawFastHLine(20, 265, 760, GxEPD_BLACK);
